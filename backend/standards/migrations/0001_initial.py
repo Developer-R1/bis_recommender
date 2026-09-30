@@ -1,0 +1,105 @@
+from django.db import migrations, models
+import django.db.models.deletion
+
+class Migration(migrations.Migration):
+    initial = True
+    dependencies = []
+    operations = [
+        migrations.CreateModel(
+            name='ProductFamily',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('slug', models.SlugField(unique=True)),
+                ('name', models.CharField(max_length=200)),
+                ('description', models.TextField(blank=True)),
+                ('keywords', models.TextField()),
+            ],
+            options={'verbose_name_plural': 'Product families', 'ordering': ['name']},
+        ),
+        migrations.CreateModel(
+            name='Standard',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('is_number', models.CharField(max_length=40)),
+                ('part', models.CharField(blank=True, default='', max_length=40)),
+                ('year', models.PositiveIntegerField(blank=True, null=True)),
+                ('title', models.CharField(max_length=500)),
+                ('family', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='standards', to='standards.productfamily')),
+                ('std_type', models.CharField(choices=[('product','Product'),('test_method','Test method'),('terminology','Terminology'),('sampling','Sampling'),('safety','Safety'),('installation','Installation'),('code_of_practice','Code of practice'),('packaging','Packaging'),('normative_reference','Normative reference')], default='product', max_length=30)),
+                ('status', models.CharField(choices=[('current','Current'),('withdrawn','Withdrawn'),('superseded','Superseded'),('unknown','Unknown')], default='unknown', max_length=20)),
+                ('replaced_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='replaces', to='standards.standard')),
+                ('amendments', models.JSONField(blank=True, default=list)),
+                ('amendment_note', models.TextField(blank=True)),
+                ('source_url', models.URLField(blank=True, max_length=500)),
+                ('verification', models.CharField(choices=[('official_verified','Verified against official BIS/gazette source'),('public_data','Sourced from public secondary references'),('demo','Placeholder / illustrative data')], default='public_data', max_length=20)),
+                ('last_verified', models.DateField(blank=True, null=True)),
+                ('notes', models.TextField(blank=True)),
+                ('triggers', models.JSONField(blank=True, default=list)),
+            ],
+            options={'ordering': ['is_number', 'part', 'year']},
+        ),
+        migrations.AlterUniqueTogether(name='standard', unique_together={('is_number','part','year')}),
+        migrations.CreateModel(
+            name='StandardEdge',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('src', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='outgoing_edges', to='standards.standard')),
+                ('dst', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='incoming_edges', to='standards.standard')),
+                ('edge_type', models.CharField(choices=[('normative_reference','Normative reference'),('test_method','Test method'),('terminology','Terminology'),('sampling','Sampling'),('safety','Safety'),('installation','Installation'),('code_of_practice','Code of practice'),('packaging','Packaging'),('co_cited','Commonly co-cited')], max_length=30)),
+                ('mandatory', models.BooleanField(default=False)),
+                ('condition', models.TextField(blank=True)),
+                ('evidence', models.TextField(blank=True)),
+                ('source_url', models.URLField(blank=True, max_length=500)),
+            ],
+        ),
+        migrations.AlterUniqueTogether(name='standardedge', unique_together={('src','dst','edge_type')}),
+        migrations.CreateModel(
+            name='CertificationRule',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('family', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='cert_rules', to='standards.productfamily')),
+                ('is_number', models.CharField(max_length=40)),
+                ('scheme', models.CharField(max_length=40)),
+                ('order_ref', models.CharField(max_length=300)),
+                ('effective_date', models.DateField(blank=True, null=True)),
+                ('since_year', models.PositiveIntegerField(blank=True, null=True)),
+                ('enterprise_size', models.CharField(default='all', max_length=10)),
+                ('state', models.CharField(choices=[('notified','Notified'),('in_force','In force'),('deferred','Deferred'),('revoked','Revoked'),('superseded','Superseded')], default='in_force', max_length=20)),
+                ('notes', models.TextField(blank=True)),
+                ('source_url', models.URLField(blank=True, max_length=500)),
+                ('verification', models.CharField(choices=[('official_verified','Verified against official BIS/gazette source'),('public_data','Sourced from public secondary references'),('demo','Placeholder / illustrative data')], default='public_data', max_length=20)),
+                ('last_verified', models.DateField(blank=True, null=True)),
+            ],
+            options={'ordering': ['family','effective_date']},
+        ),
+        migrations.AlterUniqueTogether(name='certificationrule', unique_together={('family','order_ref','enterprise_size')}),
+        migrations.CreateModel(
+            name='ParamRule',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('family', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='param_rules', to='standards.productfamily')),
+                ('standard', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='param_rules', to='standards.standard')),
+                ('grade', models.CharField(blank=True, default='', max_length=40)),
+                ('param', models.CharField(max_length=60)),
+                ('operator', models.CharField(choices=[('min','Minimum'),('max','Maximum'),('equal','Equal')], max_length=10)),
+                ('value', models.FloatField()),
+                ('unit', models.CharField(max_length=20)),
+                ('clause_ref', models.CharField(blank=True, max_length=200)),
+                ('source_url', models.URLField(blank=True, max_length=500)),
+                ('verification', models.CharField(choices=[('official_verified','Verified against official BIS/gazette source'),('public_data','Sourced from public secondary references'),('demo','Placeholder / illustrative data')], default='public_data', max_length=20)),
+            ],
+            options={'ordering': ['family','grade','param']},
+        ),
+        migrations.AlterUniqueTogether(name='paramrule', unique_together={('family','standard','grade','param')}),
+        migrations.CreateModel(
+            name='Feedback',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False)),
+                ('analysis_id', models.CharField(blank=True, max_length=64)),
+                ('is_number', models.CharField(max_length=40)),
+                ('action', models.CharField(choices=[('accept','Accept'),('reject','Reject'),('flag','Flag')], max_length=10)),
+                ('note', models.TextField(blank=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+            ],
+        ),
+    ]
