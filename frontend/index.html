@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BIS Standards Recommender — Procurement Compliance Engine</title>
+<meta name="description" content="AI-powered Indian Standards recommendation engine for procurement officials. Zero hallucination — all IS numbers traced to verified sources.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📐</text></svg>">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<nav class="app-navbar sticky-top">
+  <div class="container d-flex align-items-center justify-content-between py-2">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+      <div class="brand-icon"><i class="bi bi-diagram-3-fill"></i></div>
+      <div>
+        <div class="brand-name">BIS Standards Recommender</div>
+        <div class="brand-sub">Procurement Compliance Engine</div>
+      </div>
+    </a>
+    <div class="d-flex align-items-center gap-2">
+      <span id="connStatus" class="conn-pill conn-pending"><i class="bi bi-circle-fill me-1"></i><span id="connLabel">Connecting…</span></span>
+      <button class="btn btn-sm btn-outline-light rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#apiModal">
+        <i class="bi bi-gear-fill me-1"></i>API
+      </button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero-section">
+  <div class="hero-glow"></div>
+  <div class="container hero-inner text-center">
+    <div class="hero-badge-wrap mb-3">
+      <span class="hero-badge"><i class="bi bi-stars me-1"></i>SIH26108 · 5 Product Families · Zero Hallucination</span>
+    </div>
+    <h1 class="hero-title">The right Indian Standard,<br>every time.</h1>
+    <p class="hero-subtitle">
+      Paste a procurement description or upload a tender document. Instantly get the correct primary IS standard,
+      all normative and allied standards traced to their source clauses, the applicable certification scheme
+      evaluated as of your delivery date, and a compliance audit — nothing invented.
+    </p>
+    <div class="hero-stats row justify-content-center g-3 mt-4">
+      <div class="col-6 col-sm-3">
+        <div class="stat-tile">
+          <div class="stat-val" id="statFamilies">—</div>
+          <div class="stat-lbl">Product families</div>
+        </div>
+      </div>
+      <div class="col-6 col-sm-3">
+        <div class="stat-tile">
+          <div class="stat-val" id="statStandards">—</div>
+          <div class="stat-lbl">Curated standards</div>
+        </div>
+      </div>
+      <div class="col-6 col-sm-3">
+        <div class="stat-tile">
+          <div class="stat-val zero">0</div>
+          <div class="stat-lbl">Invented IS numbers</div>
+        </div>
+      </div>
+      <div class="col-6 col-sm-3">
+        <div class="stat-tile">
+          <div class="stat-val" id="statAsOf">—</div>
+          <div class="stat-lbl">Data as of</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="container main-wrap py-4">
+
+  <div class="input-card card shadow-sm mb-4">
+    <div class="card-body p-4 p-lg-5">
+      <div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+        <div>
+          <h2 class="section-heading mb-0"><i class="bi bi-pencil-square me-2"></i>Procurement specification</h2>
+          <p class="text-muted small mb-0 mt-1">Minimum 5 lines or 300 characters. The more detail, the more precise the output.</p>
+        </div>
+        <div id="exampleButtons" class="d-flex flex-wrap gap-2"></div>
+      </div>
+
+      <textarea id="descInput" class="form-control desc-area mb-1" rows="9"
+        placeholder="Describe what you're procuring: product or material, grade or specification, intended use, any standard you have in mind, delivery timeline, and enterprise size. Example: 'Supply of TMT reinforcement bars Fe 500D for RCC columns and beams of a government building. Yield strength 415 MPa as per mill test certificates. Delivery within 90 days. Bidders must hold a valid BIS ISI licence.'"></textarea>
+      <div class="d-flex justify-content-between mb-3">
+        <small class="text-muted"><span id="charCount">0</span> characters · <span id="lineCount">0</span> lines</small>
+        <small class="text-muted" id="fileLabel"></small>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label small text-muted">Or upload a document (.txt, .docx, .pdf)</label>
+        <input type="file" id="fileInput" class="form-control form-control-sm" accept=".txt,.docx,.pdf">
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <label class="form-label small">Tender date</label>
+          <input type="date" id="tenderDate" class="form-control">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label small">Delivery period (days)</label>
+          <input type="number" id="deliveryDays" class="form-control" min="0" placeholder="e.g. 90">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label small">Or exact delivery date</label>
+          <input type="date" id="deliveryDate" class="form-control">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label small">Supplier enterprise size</label>
+          <select id="entSize" class="form-select">
+            <option value="large" selected>Large enterprise</option>
+            <option value="small">Small enterprise</option>
+            <option value="micro">Micro enterprise</option>
+            <option value="all">Not sure / general</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <button id="analyzeBtn" class="btn btn-analyze px-4 py-2">
+          <span class="label-default"><i class="bi bi-search me-2"></i>Analyze specification</span>
+          <span class="label-loading d-none"><span class="spinner-border spinner-border-sm me-2"></span>Analyzing…</span>
+        </button>
+        <div id="inputErr" class="text-danger small d-none"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="results" class="d-none">
+
+    <div id="familyBanner" class="family-banner mb-4"></div>
+
+    <div class="row g-4">
+      <div class="col-lg-8">
+
+        <div class="result-section mb-4">
+          <h3 class="section-heading"><i class="bi bi-award-fill me-2 text-primary"></i>Recommended standards</h3>
+          <p class="text-muted small mb-3">Primary standard(s) first, then all normative/allied standards with source clause references.</p>
+          <div id="recsList"></div>
+        </div>
+
+        <div class="result-section mb-4">
+          <h3 class="section-heading"><i class="bi bi-flag-fill me-2 text-danger"></i>Compliance findings</h3>
+          <p class="text-muted small mb-3">Issues found in the described specification, sorted by severity.</p>
+          <div id="findingsList"></div>
+        </div>
+
+      </div>
+
+      <div class="col-lg-4">
+
+        <div class="result-section mb-4">
+          <h3 class="section-heading"><i class="bi bi-patch-check-fill me-2 text-success"></i>Certification</h3>
+          <p class="text-muted small mb-3">As of the delivery date, not just today.</p>
+          <div id="certList"></div>
+        </div>
+
+        <div class="result-section mb-4">
+          <h3 class="section-heading"><i class="bi bi-eye-fill me-2 text-info"></i>What we understood</h3>
+          <div id="understoodPanel"></div>
+        </div>
+
+        <div class="result-section mb-4">
+          <h3 class="section-heading"><i class="bi bi-file-earmark-text-fill me-2 text-secondary"></i>Tender clause pack</h3>
+          <textarea id="clauseBox" class="form-control clause-area" rows="10" readonly></textarea>
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-sm btn-outline-secondary" id="copyBtn"><i class="bi bi-clipboard me-1"></i>Copy</button>
+            <button class="btn btn-sm btn-outline-secondary" id="printBtn"><i class="bi bi-printer me-1"></i>Print / PDF</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="disclaimer-bar mt-2 mb-5" id="disclaimerBar"></div>
+  </div>
+
+</main>
+
+<footer class="app-footer py-4">
+  <div class="container text-center">
+    <div class="footer-brand mb-1">BIS Standards Recommender</div>
+    <div class="footer-note">Prototype · SIH26108 · Decision-support only · Always verify on the official BIS Manak portal</div>
+    <div class="footer-note mt-1">Data as of <span id="footerDate">—</span></div>
+  </div>
+</footer>
+
+<div class="modal fade" id="apiModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-hdd-network me-2"></i>Backend API URL</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted">When the backend serves this frontend directly (Render deployment), the URL auto-detects. Only change this for local development where frontend and backend run on separate ports.</p>
+        <input type="text" id="apiUrlInput" class="form-control font-mono" placeholder="http://127.0.0.1:8000/api">
+        <div class="mt-2 small text-muted">Current: <code id="currentApiUrl"></code></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="saveApiBtn" data-bs-dismiss="modal">Save & reconnect</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

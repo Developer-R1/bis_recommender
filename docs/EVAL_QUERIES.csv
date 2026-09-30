@@ -1,0 +1,21 @@
+id,query_text,expected_family_slug,expected_primary_is,notes
+1,"Supply of high strength deformed TMT reinforcement bars grade Fe 500D for RCC columns and beams, yield strength 415 MPa, delivery within 90 days.",tmt-steel-bars,IS 1786,Deliberate grade/value conflict for param-check demo
+2,"Procurement of Fe 500 TMT bars 16mm and 20mm diameter for a residential building foundation, quantity 50 MT, delivery in 60 days.",tmt-steel-bars,IS 1786,Clean case, no conflict expected
+3,"Supply of mild steel reinforcement bars conforming to IS 432 for a boundary wall, small quantity.",tmt-steel-bars,IS 432,Not in curated DB - should return not_covered / no recommendation gracefully
+4,"Wrought aluminium cookware and kitchen utensils for a government mess, conforming to IS 1660:2009, small enterprise supplier, delivery in 30 days.",aluminium-utensils,IS 1660,Live as-of-date example; cites withdrawn 2009 edition
+5,"Aluminium beverage cans for a canteen supply contract, large manufacturer, delivery in 6 months.",aluminium-utensils,IS 14407,Sibling product under same QCO family
+6,"Ordinary Portland Cement 43 grade for RCC work, compressive strength not less than 33 MPa, delivery in 45 days.",cement-opc,IS 269,Deliberate grade/value conflict
+7,"OPC 53 grade cement for pavement quality concrete, 28-day strength 53 MPa minimum, 50 kg bags, delivery in 30 days.",cement-opc,IS 269,Clean case, no conflict expected
+8,"Supply of cement conforming to IS 8112 for general construction, 500 bags.",cement-opc,IS 269,Cites superseded standard number - should flag superseded_citation
+9,"Hallmarked gold jewellery 22 karat for departmental gift scheme, HUID required, BIS registered jeweller, delivery in 20 days.",gold-hallmarking,IS 1417,Clean case, allowed caratage
+10,"Hallmarked gold jewellery 21 karat for festive gift procurement, cites IS 1417:2016, delivery in 30 days.",gold-hallmarking,IS 1417,Disallowed caratage - param_conflict expected
+11,"Silver artefacts for a cultural exchange gift, hallmarked, delivery in 15 days.",gold-hallmarking,IS 2112,Cross-family co-cited case (silver vs gold)
+12,"We need to purchase some good quality material for our upcoming construction work, please suggest the appropriate standard.",,,Deliberately vague - engine should abstain
+13,"Please supply electrical cables of standard quality for building wiring, 100 meters, delivery in 15 days.",,,Not a curated family - engine should abstain (extension point for a 5th+ family)
+14,"Steel bars for reinforcement as per relevant IS, grade not specified, 20 MT, delivery in 40 days.",tmt-steel-bars,IS 1786,No grade stated - parameter check should skip gracefully
+15,"TMT bars Fe 550D grade for a seismic zone IV high-rise, yield strength 550 MPa, delivery in 100 days.",tmt-steel-bars,IS 1786,Clean case; should surface IS 13920 as an allied 'safety' standard
+16,"Wrought aluminium utensils for a large-scale hostel mess supply, current IS 1660:2024, delivery in 10 days.",aluminium-utensils,IS 1660,Cites the CURRENT edition - no year_mismatch expected
+17,"Cement OPC 33 grade for plastering work, 28-day strength 16 MPa stated, delivery in 20 days.",cement-opc,IS 269,Deliberate conflict (33 grade needs 33 MPa, not 16)
+18,"Gold jewellery 18 karat for a corporate gifting tender, HUID mandatory, delivery in 25 days.",gold-hallmarking,IS 1417,Clean case, allowed caratage
+19,"TMT reinforcement steel bars for a bridge project, grade Fe600, high load bearing application, delivery in 120 days.",tmt-steel-bars,IS 1786,Highest grade in the curated ladder
+20,"Aluminium cookware for institutional kitchen use, micro enterprise supplier, delivery in 200 days from today.",aluminium-utensils,IS 1660,Tests the micro-enterprise 2026 order date (1 Apr 2027) crossing into mandatory_by_delivery for long horizons
